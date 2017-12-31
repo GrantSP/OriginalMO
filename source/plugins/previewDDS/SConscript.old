@@ -1,0 +1,19 @@
+Import('qt_env')
+
+env = qt_env.Clone()
+
+env.EnableQtModules('OpenGL')
+
+env.AppendUnique(CPPDEFINES = [
+    'PREVIEWDDS_LIBRARY',
+    'NOMINMAX'
+])
+
+env.AppendUnique(CPPPATH = [
+    '${BOOSTPATH}'
+])
+
+lib = env.SharedLibrary('previewDDS',
+                        env.Glob('*.cpp') + env.Glob('gl/*.cpp') +
+                                                      env.Glob('gl/dds/*.cpp'))
+env.InstallModule(lib)

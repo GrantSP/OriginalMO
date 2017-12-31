@@ -1,0 +1,19 @@
+Import('env')
+
+env = env.Clone()
+
+env.AppendUnique(CPPDEFINES = [
+    'OMO_DLL_LIBRARY',
+    '_CRT_SECURE_NO_WARNINGS',
+    '_WINDLL'
+])
+
+try:
+    env['CPPDEFINES'] = env.Flatten(env['CPPDEFINES'])
+    env['CPPDEFINES'].remove('UNICODE')
+except:
+    pass
+
+lib = env.SharedLibrary('proxy', env.Glob('*.cpp'))
+
+env.InstallModule(lib)

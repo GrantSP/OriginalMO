@@ -1,0 +1,56 @@
+import os
+
+Import('env qt_env')
+
+def InstallModule(self, arg, subdir = None):
+    install_dir = '${INSTALL_PATH}'
+    if subdir is not None:
+        install_dir = os.path.join(install_dir, subdir)
+    # Ensure we install this when built from here, not just from top level build    
+    self.Pseudo('install')
+    self.Depends('install',
+        self.Install(install_dir,
+                     filter(lambda x: x.suffix in ('.dll', '.pdb', '.exe'),
+                            arg)))
+
+def RequireLibraries(self, *libraries):
+    # Cannot use env.AppendUnique because it confuses moc
+#    self['CPPPATH'] += [
+ #       os.path.join('..', '..', library) for library in libraries
+  #  ]
+    self.AppendUnique(CPPPATH = [
+        os.path.join('..', library) for library in libraries
+    ])
+
+    self.AppendUnique(LIBPATH = [
+        os.path.join('..', library) for library in libraries
+    ])
+
+    libs = list(libraries)
+    try:
+        idx = libs.index('shared')
+        libs[idx] = 'mo_shared'
+    except:
+        pass
+
+    self.AppendUnique(LIBS = [ library for library in libs ])
+
+qt_env = qt_env.Clone()
+qt_env.AddMethod(InstallModule)
+qt_env.AddMethod(RequireLibraries)
+
+env = env.Clone()
+env.AddMethod(InstallModule)
+env.AddMethod(RequireLibraries)
+
+libs_to_install = env.SConscript(env.Glob('*/SConscript'),
+                                 exports = 'env qt_env')
+dll_manifest = 'dlls.manifest'
+if qt_env['CONFIG'] == 'debug':
+    dll_manifest += '.debug'
+if qt_env['QT_MAJOR_VERSION'] > 4:
+    dll_manifest += '.qt%d' % qt_env['QT_MAJOR_VERSION']
+qt_env.InstallAs(os.path.join(qt_env['INSTALL_PATH'], 'DLLs', 'dlls.manifest'),
+                 dll_manifest)
+
+Return('libs_to_install')

@@ -1,0 +1,53 @@
+import os
+
+Import('qt_env')
+
+def RequireLibraries(self, *libraries):
+    # Cannot use env.AppendUnique because it confuses moc
+    self['CPPPATH'] += [
+       os.path.join('..', '..', library) for library in libraries
+    ]
+#    self.AppendUnique(CPPPATH = [
+#        os.path.join('..', '..', library) for library in libraries
+#    ])
+
+    self.AppendUnique(LIBPATH = [
+        os.path.join('..', '..', library) for library in libraries
+    ])
+
+    self.AppendUnique(LIBS = [ library for library in libraries ])
+
+def RequiresGamebryo(self):
+    self.AppendUnique(CPPPATH = [
+        '../gameGamebryo',
+        '../gamefeatures',
+    ])
+    self.AppendUnique(LIBPATH = [
+        '../gameGamebryo'
+    ])
+    self.AppendUnique(LIBS = [
+        'gameGamebryo',
+        'advapi32',
+        'ole32',
+        'shell32'
+    ])
+
+qt_env = qt_env.Clone()
+
+qt_env['INSTALL_PATH'] = os.path.join(qt_env['INSTALL_PATH'], 'plugins')
+
+qt_env.AddMethod(RequireLibraries)
+qt_env.AddMethod(RequiresGamebryo)
+
+# All plugins require these libraries
+qt_env.EnableQtModules('Core', 'Gui')
+if qt_env['QT_MAJOR_VERSION'] > 4:
+    qt_env.EnableQtModules('Widgets')
+
+qt_env.RequireLibraries('uibase')
+# uibase requires this. Maybe require libraries could work it out.
+qt_env.AppendUnique(CPPPATH = '${BOOSTPATH}')
+
+plugin_libs = qt_env.SConscript(qt_env.Glob('*/SConscript'), exports = 'qt_env')
+
+Return('plugin_libs')
